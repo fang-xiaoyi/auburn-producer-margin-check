@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Producer Margin Check | Alabama Cow-Calf</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell">
+      <div class="eyebrow">AUBURN UNIVERSITY | FARM MANAGEMENT DECISION SUPPORT</div>
+      <div class="header-row">
+        <div>
+          <h1>Producer Margin Check</h1>
+          <p class="lede">A simple cow-calf tool for turning farm records into a benchmark and a management conversation.</p>
+        </div>
+        <div class="header-actions">
+          <button class="button button-secondary" id="loadExample">Load ACES example</button>
+          <button class="button button-secondary" id="matchBenchmark">Find closest benchmark</button>
+          <button class="button button-primary" id="downloadReport">Download report</button>
+        </div>
+      </div>
+      <div class="privacy-note"><span class="dot"></span> Local prototype. Your entries stay in this browser until you download or clear them.</div>
+    </div>
+  </header>
+
+  <main class="shell main-content">
+    <section class="top-grid">
+      <form class="card input-card" id="inputForm">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow orange">1. ENTER YOUR RECORDS</div>
+            <h2>Your operation</h2>
+          </div>
+          <span class="unit-badge">All amounts per cow-unit</span>
+        </div>
+
+        <fieldset>
+          <legend>Production and scale</legend>
+          <div class="field-grid two-col">
+            <label>Brood cows / cow-units
+              <input id="herdSize" type="number" min="1" step="1" value="50" />
+              <span class="hint">Used for scale matching and annual totals</span>
+            </label>
+            <label>Grazing acres
+              <input id="acres" type="number" min="0" step="1" value="350" />
+              <span class="hint" id="acresPerCowHint">7.0 acres per cow</span>
+            </label>
+            <label>Weaning rate (%)
+              <input id="weaningRate" type="number" min="0" max="100" step="1" value="90" />
+              <span class="hint">Calves weaned per exposed cow</span>
+            </label>
+            <label>Average weaning weight (lb)
+              <input id="weaningWeight" type="number" min="0" step="1" value="625" />
+              <span class="hint">Average weight per calf sold</span>
+            </label>
+            <label>Expected calf price ($/lb)
+              <input id="calfPrice" type="number" min="0" step="0.01" value="1.60" />
+              <span class="hint">Use a current or expected sale price</span>
+            </label>
+            <label>Cull and other revenue ($/cow)
+              <input id="cullRevenue" type="number" min="0" step="0.01" value="77" />
+              <span class="hint">Cull cows, cull bulls, hay, and other sales</span>
+            </label>
+          </div>
+        </fieldset>
+
+        <fieldset>
+          <legend>Annual cost breakdown</legend>
+          <div class="field-grid two-col cost-grid">
+            <label>Pasture / forage
+              <input data-cost="pasture" type="number" min="0" step="0.01" value="474.70" />
+            </label>
+            <label>Purchased feed
+              <input data-cost="feed" type="number" min="0" step="0.01" value="156.37" />
+            </label>
+            <label>Animal health
+              <input data-cost="health" type="number" min="0" step="0.01" value="38.72" />
+            </label>
+            <label>Replacement stock
+              <input data-cost="replacements" type="number" min="0" step="0.01" value="150" />
+            </label>
+            <label>Machinery and equipment
+              <input data-cost="machinery" type="number" min="0" step="0.01" value="89.60" />
+            </label>
+            <label>Labor
+              <input data-cost="labor" type="number" min="0" step="0.01" value="0" />
+            </label>
+            <label>Land, rent, and interest
+              <input data-cost="land" type="number" min="0" step="0.01" value="114.35" />
+            </label>
+            <label>Marketing, admin, and other
+              <input data-cost="other" type="number" min="0" step="0.01" value="132.93" />
+            </label>
+          </div>
+          <div class="cost-total-row"><span>Total cost per cow</span><strong id="liveCostTotal">$1,156.67</strong></div>
+        </fieldset>
+
+        <fieldset class="history-fieldset">
+          <legend>Optional history</legend>
+          <p class="fieldset-note">Add your own history so the tool can compare today with the previous year and your 3-year or 5-year average.</p>
+          <div class="field-grid three-col">
+            <label>Previous year total cost
+              <input id="historyPreviousCost" type="number" min="0" step="0.01" placeholder="$ / cow" />
+            </label>
+            <label>3-year average total cost
+              <input id="historyThreeCost" type="number" min="0" step="0.01" placeholder="$ / cow" />
+            </label>
+            <label>5-year average total cost
+              <input id="historyFiveCost" type="number" min="0" step="0.01" placeholder="$ / cow" />
+            </label>
+          </div>
+        </fieldset>
+      </form>
+
+      <section class="card results-card" aria-live="polite">
+        <div class="section-header">
+          <div>
+            <div class="eyebrow green">2. SEE THE DECISION</div>
+            <h2>Your margin screen</h2>
+          </div>
+          <span class="status-pill" id="statusPill">Calculating</span>
+        </div>
+
+        <div class="metric-grid">
+          <article class="metric-card"><span>Pounds weaned / exposed cow</span><strong id="poundsWeaned">563 lb</strong><small>weaning rate × weight</small></article>
+          <article class="metric-card"><span>Gross revenue / cow</span><strong id="grossRevenue">$977</strong><small>calf sales + other revenue</small></article>
+          <article class="metric-card"><span>Break-even calf price</span><strong id="breakEvenPrice">$1.60/lb</strong><small>price that makes total margin zero</small></article>
+          <article class="metric-card emphasis"><span>Margin / cow</span><strong id="marginPerCow">-$180</strong><small>gross revenue − total cost</small></article>
+        </div>
+
+        <div class="annual-strip">
+          <div><span>Estimated annual margin</span><strong id="annualMargin">-$8,983</strong></div>
+          <div><span>Cost per pound weaned</span><strong id="costPerPound">$2.06/lb</strong></div>
+          <div><span>Acres per cow</span><strong id="acresPerCow">7.0</strong></div>
+        </div>
+
+        <div class="decision-box" id="decisionBox">
+          <div class="decision-label">FIRST QUESTION TO DISCUSS</div>
+          <p id="decisionText">Your current cost and output pattern will appear here.</p>
+        </div>
+      </section>
+    </section>
+
+    <section class="card benchmark-card">
+      <div class="section-header benchmark-header">
+        <div>
+          <div class="eyebrow orange">3. COMPARE WITH A RELEVANT BENCHMARK</div>
+          <h2>Benchmark and gap diagnosis</h2>
+          <p class="section-subtitle">The tool keeps scale, year, and cost definitions visible. A benchmark is a conversation starter, not a prescription.</p>
+        </div>
+        <label class="benchmark-select">Selected benchmark
+          <select id="benchmarkSelect"></select>
+        </label>
+      </div>
+
+      <div class="benchmark-meta" id="benchmarkMeta"></div>
+      <div class="comparison-grid">
+        <div>
+          <h3>Performance comparison</h3>
+          <div class="table-wrap"><table id="performanceTable"></table></div>
+        </div>
+        <div>
+          <h3>Cost breakdown</h3>
+          <div class="table-wrap"><table id="costTable"></table></div>
+        </div>
+      </div>
+      <div class="benchmark-scan">
+        <div class="scan-heading"><h3>Benchmark scan</h3><span>Which reference is closest, stronger, or falling behind?</span></div>
+        <div id="benchmarkScan" class="scan-grid"></div>
+      </div>
+    </section>
+
+    <section class="analysis-grid">
+      <article class="card diagnosis-card">
+        <div class="eyebrow red">4. FIND THE GAP</div>
+        <h2>What the tool sees</h2>
+        <div id="diagnosisList" class="diagnosis-list"></div>
+      </article>
+      <article class="card suggestion-card">
+        <div class="eyebrow green">5. TURN IT INTO ACTION</div>
+        <h2>Suggested next steps</h2>
+        <div id="suggestionList" class="suggestion-list"></div>
+        <p class="caution">These prompts identify where to investigate. They do not replace a producer’s records, lender review, veterinarian advice, or Extension consultation.</p>
+      </article>
+    </section>
+
+    <section class="card data-card">
+      <div class="section-header">
+        <div>
+          <div class="eyebrow blue">DATA LAYER</div>
+          <h2>How the tool would grow at Auburn</h2>
+        </div>
+        <span class="unit-badge">Designed for Extension use</span>
+      </div>
+      <div class="data-layer-grid">
+        <div><strong>Producer records</strong><span>Private inputs for the operation’s own production, cost, and cash-flow history.</span></div>
+        <div><strong>Alabama benchmarks</strong><span>Extension enterprise budgets and representative farms, matched by region and herd size.</span></div>
+        <div><strong>National context</strong><span>USDA ERS herd-size benchmarks and other public cost-and-return series.</span></div>
+        <div><strong>Decision report</strong><span>Per-cow results, category gaps, scenario checks, and a short discussion guide.</span></div>
+      </div>
+    </section>
+
+    <footer class="sources">
+      <strong>Public benchmark sources used in this prototype</strong>
+      <a href="https://www.aces.edu/blog/topics/farm-management/south-alabama-cow-calf-enterprise-cost-study/" target="_blank" rel="noreferrer">Alabama Extension South Alabama Cow-Calf Enterprise Cost Study</a>
+      <a href="https://www.aces.edu/blog/topics/beef/enterprise-budgets-for-livestock/" target="_blank" rel="noreferrer">Alabama Extension Enterprise Budgets for Livestock</a>
+      <a href="https://ers.usda.gov/publications/107012" target="_blank" rel="noreferrer">USDA ERS Cow-Calf Farm Structure and Production Costs</a>
+      <a href="https://www.cattlefax.com/ccbe/" target="_blank" rel="noreferrer">CattleFax Cow-Calf Breakeven Evaluator (interface reference)</a>
+    </footer>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
